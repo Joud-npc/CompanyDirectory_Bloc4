@@ -1,26 +1,42 @@
+using System.Linq;
 using System.Windows;
+using CompanyDirectory.Data;
+using CompanyDirectory.Models;
+using Microsoft.EntityFrameworkCore;
 
-namespace CompanyDirectory.Views
+namespace CompanyDirectory
 {
     public partial class LoginWindow : Window
     {
-        public LoginWindow()
+        private readonly DbContextOptions<ApplicationDbContext> _options;
+
+        public LoginWindow(DbContextOptions<ApplicationDbContext> options)
         {
             InitializeComponent();
+            _options = options;
         }
 
-        private void Connect_Click(object sender, RoutedEventArgs e)
+        private void BtnLogin_Click(object sender, RoutedEventArgs e)
         {
-            // pour tests, n'importe quel user + mot de passe "user" passe
-            if (!string.IsNullOrWhiteSpace(UsernameBox.Text) && PasswordBox.Password == "user")
+            string username = TxtUsername.Text.Trim();
+            string password = TxtPassword.Password;
+
+            using var db = new ApplicationDbContext(_options);
+
+            var user = db.Employees
+                .FirstOrDefault(emp => emp.Username == username && emp.Password == password);
+
+            if (user != null)
             {
-                var main = new MainWindow(); // remplace par ta MainView si nom différent
-                main.Show();
+                var mainWindow = new MainWindow(user);
+                Application.Current.MainWindow = mainWindow;
+                mainWindow.Show();
                 this.Close();
             }
             else
             {
-                MessageBox.Show("Identifiants invalides (démo : mot de passe 'user')");
+                MessageBox.Show("Identifiant ou mot de passe incorrect.", "Erreur",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
     }

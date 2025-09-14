@@ -1,12 +1,15 @@
-<Window x:Class="CompanyDirectory.Views.LoginWindow"
+<Window x:Class="CompanyDirectory.LoginWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Login" Height="320" Width="420" WindowStartupLocation="CenterScreen">
-    <Grid>
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Width="300">
-            <TextBox x:Name="UsernameBox" Margin="0,0,0,8" />
-            <PasswordBox x:Name="PasswordBox" Margin="0,0,0,8"/>
-            <Button Content="Se connecter" Click="Connect_Click" />
+        Title="Connexion" Height="250" Width="400"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="20">
+        <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="Nom d'utilisateur" Margin="0,0,0,5"/>
+            <TextBox x:Name="TxtUsername" Height="25" Margin="0,0,0,10"/>
+            <TextBlock Text="Mot de passe" Margin="0,0,0,5"/>
+            <PasswordBox x:Name="TxtPassword" Height="25" Margin="0,0,0,20"/>
+            <Button Content="Se connecter" Height="30" Click="BtnLogin_Click"/>
         </StackPanel>
     </Grid>
 </Window>
