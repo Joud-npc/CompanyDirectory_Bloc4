@@ -16,76 +16,124 @@ namespace CompanyDirectory.Services
             _db = db;
         }
 
-        public async Task SeedRandomUsersAsync(int count = 1000)
+        public async Task SeedRandomUsersAsync(int count = 50)
         {
-            // Initialisation des services
-            if (!_db.Services.Any())
+            try
             {
-                var defaultServices = new[] { "Production", "Comptabilité", "Accueil", "Maintenance", "R&D" };
-                foreach (var s in defaultServices)
+                // Initialisation des services si vides
+                if (!_db.Services.Any())
                 {
-                    _db.Services.Add(new Service { Nom = s });
-                }
-                await _db.SaveChangesAsync();
-            }
-
-            // Initialisation des sites (optionnel, peut être rempli par la suite via RandomUser)
-            if (!_db.Sites.Any())
-            {
-                var defaultSites = new[] { "Paris", "Lyon", "Marseille", "Toulouse", "Bordeaux" };
-                foreach (var city in defaultSites)
-                {
-                    _db.Sites.Add(new Site { Ville = city });
-                }
-                await _db.SaveChangesAsync();
-            }
-
-            // Récupération des utilisateurs via RandomUser API
-            var url = $"https://randomuser.me/api/?results={count}&nat=fr";
-            var json = await _http.GetStringAsync(url);
-            var doc = JObject.Parse(json);
-            var results = doc["results"] as JArray;
-            if (results == null) return;
-
-            var rand = new Random();
-            var services = _db.Services.ToList();
-            var sites = _db.Sites.ToList();
-
-            foreach (var r in results)
-            {
-                var city = (string?)r["location"]?["city"] ?? "Unknown";
-
-                // Vérifie si le site existe déjà
-                var site = sites.FirstOrDefault(s => s.Ville == city);
-                if (site == null)
-                {
-                    site = new Site { Ville = city };
-                    _db.Sites.Add(site);
+                    var defaultServices = new[] 
+                    { 
+                        "Production", "Comptabilité", "Accueil", 
+                        "Maintenance", "R&D", "Ressources Humaines",
+                        "Marketing", "Qualité", "Logistique"
+                    };
+                    
+                    foreach (var s in defaultServices)
+                    {
+                        _db.Services.Add(new Service { Nom = s });
+                    }
                     await _db.SaveChangesAsync();
-                    sites.Add(site); // Met à jour la liste en mémoire
                 }
 
-                var first = (string?)r["name"]?["first"] ?? "X";
-                var last = (string?)r["name"]?["last"] ?? "X";
-                var email = (string?)r["email"] ?? $"{first}.{last}@example.com";
-                var phone = (string?)r["phone"] ?? "";
-
-                var service = services[rand.Next(services.Count)];
-
-                var emp = new Employee
+                // Initialisation des sites si vides
+                if (!_db.Sites.Any())
                 {
-                    FirstName = first,
-                    LastName = last,
-                    Email = email,
-                    Phone = phone,
-                    SiteId = site.Id,
-                    ServiceId = service.Id
-                };
+                    var defaultSites = new[] 
+                    { 
+                        "Paris", "Lyon", "Marseille", "Toulouse", 
+                        "Bordeaux", "Nantes", "Strasbourg", "Lille"
+                    };
+                    
+                    foreach (var city in defaultSites)
+                    {
+                        _db.Sites.Add(new Site { Ville = city });
+                    }
+                    await _db.SaveChangesAsync();
+                }
 
-                _db.Employees.Add(emp);
+                // Appel à l'API RandomUser
+                var url = $"https://randomuser.me/api/?results={count}&nat=fr";
+                var json = await _http.GetStringAsync(url);
+                var doc = JObject.Parse(json);
+                var results = doc["results"] as JArray;
+                
+                if (results == null) 
+                {
+                    throw new Exception("Aucune donnée reçue de l'API RandomUser");
+                }
+
+                var rand = new Random();
+                var services = await _db.Services.ToListAsync();
+                var sites = await _db.Sites.ToListAsync();
+
+                foreach (var r in results)
+                {
+                    try
+                    {
+                        // Extraction des données de l'API
+                        var city = (string?)r["location"]?["city"] ?? "Inconnu";
+                        var first = (string?)r["name"]?["first"] ?? "Prénom";
+                        var last = (string?)r["name"]?["last"] ?? "Nom";
+                        var email = (string?)r["email"] ?? $"{first}.{last}@entreprise.fr";
+                        var phone = (string?)r["phone"] ?? "01 23 45 67 89";
+
+                        // Nettoyer le nom de la ville (première lettre majuscule)
+                        city = char.ToUpper(city[0]) + city.Substring(1).ToLower();
+
+                        // Vérifier si le site existe déjà, sinon le créer
+                        var site = sites.FirstOrDefault(s => s.Ville.Equals(city, StringComparison.OrdinalIgnoreCase));
+                        if (site == null)
+                        {
+                            site = new Site { Ville = city };
+                            _db.Sites.Add(site);
+                            await _db.SaveChangesAsync();
+                            sites.Add(site); // Mettre à jour la liste en mémoire
+                        }
+
+                        // Sélectionner un service aléatoire
+                        var service = services[rand.Next(services.Count)];
+
+                        // Créer un nom d'utilisateur unique
+                        var baseUsername = $"{first.ToLower()}.{last.ToLower()}";
+                        var username = baseUsername;
+                        int counter = 1;
+                        
+                        while (_db.Employees.Any(e => e.Username == username))
+                        {
+                            username = $"{baseUsername}{counter}";
+                            counter++;
+                        }
+
+                        // Créer l'employé
+                        var employee = new Employee
+                        {
+                            FirstName = char.ToUpper(first[0]) + first.Substring(1),
+                            LastName = char.ToUpper(last[0]) + last.Substring(1),
+                            Email = email.ToLower(),
+                            Phone = phone,
+                            Username = username,
+                            Password = "password123", // Mot de passe par défaut
+                            SiteId = site.Id,
+                            ServiceId = service.Id
+                        };
+
+                        _db.Employees.Add(employee);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log l'erreur mais continue avec les autres utilisateurs
+                        System.Diagnostics.Debug.WriteLine($"Erreur lors de l'import d'un utilisateur : {ex.Message}");
+                    }
+                }
+
+                await _db.SaveChangesAsync();
             }
-
-            await _db.SaveChangesAsync();
+            catch (Exception ex)
+            {
+                throw new Exception($"Erreur lors de l'import depuis l'API RandomUser : {ex.Message}");
+            }
         }
     }
 }

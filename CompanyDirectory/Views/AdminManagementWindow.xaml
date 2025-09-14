@@ -1,0 +1,173 @@
+<Window x:Class="CompanyDirectory.Views.AdminManagementWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Administration - Gestion des données" Height="700" Width="1200"
+        WindowStartupLocation="CenterOwner">
+    <Grid>
+        <TabControl Margin="10">
+            <!-- Onglet Employés -->
+            <TabItem Header="Employés">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Barre d'outils Employés -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                        <Button x:Name="BtnAddEmployee" Content="Ajouter" Width="100" Height="30" 
+                                Click="BtnAddEmployee_Click" Margin="0,0,5,0"/>
+                        <Button x:Name="BtnEditEmployee" Content="Modifier" Width="100" Height="30" 
+                                Click="BtnEditEmployee_Click" Margin="0,0,5,0"/>
+                        <Button x:Name="BtnDeleteEmployee" Content="Supprimer" Width="100" Height="30" 
+                                Click="BtnDeleteEmployee_Click" Margin="0,0,20,0"/>
+                        <Separator/>
+                        <Button x:Name="BtnImportUsers" Content="Importer via API" Width="140" Height="30" 
+                                Click="BtnImportUsers_Click" Margin="10,0,5,0"/>
+                        <TextBox x:Name="TxtImportCount" Width="50" Height="30" Text="50" 
+                                 ToolTip="Nombre d'utilisateurs à importer"/>
+                    </StackPanel>
+
+                    <!-- Grille Employés -->
+                    <DataGrid x:Name="EmployeesGrid" Grid.Row="1" 
+                              AutoGenerateColumns="False" 
+                              SelectionMode="Single"
+                              CanUserAddRows="False">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Nom" Binding="{Binding LastName}" Width="120"/>
+                            <DataGridTextColumn Header="Prénom" Binding="{Binding FirstName}" Width="120"/>
+                            <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="200"/>
+                            <DataGridTextColumn Header="Téléphone" Binding="{Binding Phone}" Width="120"/>
+                            <DataGridTextColumn Header="Site" Binding="{Binding Site.Ville}" Width="100" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Service" Binding="{Binding Service.Nom}" Width="120" IsReadOnly="True"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Statut Employés -->
+                    <StatusBar Grid.Row="2">
+                        <StatusBarItem>
+                            <TextBlock x:Name="EmployeesStatusText" Text="Prêt"/>
+                        </StatusBarItem>
+                        <Separator/>
+                        <StatusBarItem>
+                            <TextBlock x:Name="EmployeesCountText" Text="0 employé(s)"/>
+                        </StatusBarItem>
+                    </StatusBar>
+                </Grid>
+            </TabItem>
+
+            <!-- Onglet Sites -->
+            <TabItem Header="Sites">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Barre d'outils Sites -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                        <Button x:Name="BtnAddSite" Content="Ajouter" Width="100" Height="30" 
+                                Click="BtnAddSite_Click" Margin="0,0,5,0"/>
+                        <Button x:Name="BtnEditSite" Content="Modifier" Width="100" Height="30" 
+                                Click="BtnEditSite_Click" Margin="0,0,5,0"/>
+                        <Button x:Name="BtnDeleteSite" Content="Supprimer" Width="100" Height="30" 
+                                Click="BtnDeleteSite_Click"/>
+                    </StackPanel>
+
+                    <!-- Grille Sites -->
+                    <DataGrid x:Name="SitesGrid" Grid.Row="1" 
+                              AutoGenerateColumns="False" 
+                              SelectionMode="Single"
+                              CanUserAddRows="False">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="100" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Ville" Binding="{Binding Ville}" Width="200"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Statut Sites -->
+                    <StatusBar Grid.Row="2">
+                        <StatusBarItem>
+                            <TextBlock x:Name="SitesStatusText" Text="Prêt"/>
+                        </StatusBarItem>
+                        <Separator/>
+                        <StatusBarItem>
+                            <TextBlock x:Name="SitesCountText" Text="0 site(s)"/>
+                        </StatusBarItem>
+                    </StatusBar>
+                </Grid>
+            </TabItem>
+
+            <!-- Onglet Services -->
+            <TabItem Header="Services">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Barre d'outils Services -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                        <Button x:Name="BtnAddService" Content="Ajouter" Width="100" Height="30" 
+                                Click="BtnAddService_Click" Margin="0,0,5,0"/>
+                        <Button x:Name="BtnEditService" Content="Modifier" Width="100" Height="30" 
+                                Click="BtnEditService_Click" Margin="0,0,5,0"/>
+                        <Button x:Name="BtnDeleteService" Content="Supprimer" Width="100" Height="30" 
+                                Click="BtnDeleteService_Click"/>
+                    </StackPanel>
+
+                    <!-- Grille Services -->
+                    <DataGrid x:Name="ServicesGrid" Grid.Row="1" 
+                              AutoGenerateColumns="False" 
+                              SelectionMode="Single"
+                              CanUserAddRows="False">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="100" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Nom" Binding="{Binding Nom}" Width="200"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Statut Services -->
+                    <StatusBar Grid.Row="2">
+                        <StatusBarItem>
+                            <TextBlock x:Name="ServicesStatusText" Text="Prêt"/>
+                        </StatusBarItem>
+                        <Separator/>
+                        <StatusBarItem>
+                            <TextBlock x:Name="ServicesCountText" Text="0 service(s)"/>
+                        </StatusBarItem>
+                    </StatusBar>
+                </Grid>
+            </TabItem>
+
+            <!-- Onglet Logs -->
+            <TabItem Header="Logs et Statistiques">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                        <Button x:Name="BtnRefreshLogs" Content="Actualiser" Width="100" Height="30" 
+                                Click="BtnRefreshLogs_Click" Margin="0,0,10,0"/>
+                        <Button x:Name="BtnClearLogs" Content="Vider les logs" Width="120" Height="30" 
+                                Click="BtnClearLogs_Click"/>
+                    </StackPanel>
+
+                    <TextBox x:Name="TxtLogs" Grid.Row="1" 
+                             IsReadOnly="True" 
+                             AcceptsReturn="True" 
+                             VerticalScrollBarVisibility="Auto"
+                             HorizontalScrollBarVisibility="Auto"
+                             FontFamily="Consolas"
+                             FontSize="10"/>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>
