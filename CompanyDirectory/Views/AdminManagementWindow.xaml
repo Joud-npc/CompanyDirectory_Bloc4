@@ -10,12 +10,13 @@
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Barre d'outils Employés -->
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                    <!-- Barre d'outils Employés - Ligne 1 -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,5">
                         <Button x:Name="BtnAddEmployee" Content="Ajouter" Width="100" Height="30" 
                                 Click="BtnAddEmployee_Click" Margin="0,0,5,0"/>
                         <Button x:Name="BtnEditEmployee" Content="Modifier" Width="100" Height="30" 
@@ -29,11 +30,25 @@
                                  ToolTip="Nombre d'utilisateurs à importer"/>
                     </StackPanel>
 
+                    <!-- Barre d'outils Employés - Ligne 2 (Modification multiple) -->
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
+                        <TextBlock Text="Modification multiple :" VerticalAlignment="Center" FontWeight="Bold" Margin="0,0,10,0"/>
+                        <Button x:Name="BtnBulkEdit" Content="Modif. Multiple" Width="120" Height="30" 
+                                Click="BtnBulkEdit_Click" Background="#FF9800" Foreground="White" Margin="0,0,5,0"/>
+                        <Button x:Name="BtnSelectAll" Content="Tout sélectionner" Width="130" Height="30" 
+                                Click="BtnSelectAll_Click" Margin="0,0,5,0"/>
+                        <Button x:Name="BtnDeselectAll" Content="Tout désélectionner" Width="140" Height="30" 
+                                Click="BtnDeselectAll_Click" Margin="0,0,10,0"/>
+                        <TextBlock x:Name="TxtSelectionCount" Text="0 sélectionné(s)" VerticalAlignment="Center" 
+                                   FontStyle="Italic" Margin="10,0,0,0"/>
+                    </StackPanel>
+
                     <!-- Grille Employés -->
-                    <DataGrid x:Name="EmployeesGrid" Grid.Row="1" 
+                    <DataGrid x:Name="EmployeesGrid" Grid.Row="2" 
                               AutoGenerateColumns="False" 
-                              SelectionMode="Single"
-                              CanUserAddRows="False">
+                              SelectionMode="Extended"
+                              CanUserAddRows="False"
+                              SelectionChanged="EmployeesGrid_SelectionChanged">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50" IsReadOnly="True"/>
                             <DataGridTextColumn Header="Nom" Binding="{Binding LastName}" Width="120"/>
@@ -46,7 +61,7 @@
                     </DataGrid>
 
                     <!-- Statut Employés -->
-                    <StatusBar Grid.Row="2">
+                    <StatusBar Grid.Row="3">
                         <StatusBarItem>
                             <TextBlock x:Name="EmployeesStatusText" Text="Prêt"/>
                         </StatusBarItem>

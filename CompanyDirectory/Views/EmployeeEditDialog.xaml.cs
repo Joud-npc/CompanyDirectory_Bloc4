@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using CompanyDirectory.Data;
@@ -17,8 +18,8 @@ namespace CompanyDirectory.Views
             InitializeComponent();
             _isEditMode = false;
             Employee = new Employee();
-            TitleText.Text = "Nouvel Employé";
-            LoadComboBoxes();
+            this.Title = "Ajouter un employé";
+            LoadSitesAndServices();
         }
 
         public EmployeeEditDialog(Employee employee)
@@ -37,24 +38,21 @@ namespace CompanyDirectory.Views
                 SiteId = employee.SiteId,
                 ServiceId = employee.ServiceId
             };
-            
-            TitleText.Text = "Modifier Employé";
-            LoadComboBoxes();
-            LoadEmployeeData();
+            this.Title = "Modifier un employé";
+            LoadSitesAndServices();
+            PopulateFields();
         }
 
-        private void LoadComboBoxes()
+        private void LoadSitesAndServices()
         {
             try
             {
                 using var db = new ApplicationDbContext(((App)Application.Current).DbOptions);
                 
-                // Charger les sites
                 var sites = db.Sites.OrderBy(s => s.Ville).ToList();
-                CmbSite.ItemsSource = sites;
-
-                // Charger les services
                 var services = db.Services.OrderBy(s => s.Nom).ToList();
+
+                CmbSite.ItemsSource = sites;
                 CmbService.ItemsSource = services;
             }
             catch (Exception ex)
@@ -63,77 +61,43 @@ namespace CompanyDirectory.Views
             }
         }
 
-        private void LoadEmployeeData()
+        private void PopulateFields()
         {
-            TxtLastName.Text = Employee.LastName;
             TxtFirstName.Text = Employee.FirstName;
+            TxtLastName.Text = Employee.LastName;
             TxtEmail.Text = Employee.Email;
             TxtPhone.Text = Employee.Phone;
             TxtUsername.Text = Employee.Username;
-            // Ne pas charger le mot de passe pour des raisons de sécurité
-            
+
             CmbSite.SelectedValue = Employee.SiteId;
             CmbService.SelectedValue = Employee.ServiceId;
         }
 
         private void BtnSave_Click(object sender, RoutedEventArgs e)
         {
-            if (!ValidateForm())
-                return;
-
-            try
+            if (ValidateFields())
             {
-                // Mise à jour des propriétés
-                Employee.LastName = TxtLastName.Text.Trim();
                 Employee.FirstName = TxtFirstName.Text.Trim();
+                Employee.LastName = TxtLastName.Text.Trim();
                 Employee.Email = TxtEmail.Text.Trim();
                 Employee.Phone = TxtPhone.Text.Trim();
                 Employee.Username = TxtUsername.Text.Trim();
-                
-                // Mise à jour du mot de passe seulement s'il a été saisi
-                if (!string.IsNullOrWhiteSpace(TxtPassword.Password))
-                {
-                    Employee.Password = TxtPassword.Password; // En production, utilisez un hash
-                }
-                else if (!_isEditMode)
-                {
-                    MessageBox.Show("Le mot de passe est obligatoire pour un nouvel employé.");
-                    return;
-                }
-
                 Employee.SiteId = (int)CmbSite.SelectedValue;
                 Employee.ServiceId = (int)CmbService.SelectedValue;
 
-                // Vérifier l'unicité du nom d'utilisateur
-                using var db = new ApplicationDbContext(((App)Application.Current).DbOptions);
-                var existingUser = db.Employees
-                    .FirstOrDefault(e => e.Username == Employee.Username && e.Id != Employee.Id);
-                
-                if (existingUser != null)
+                // Si c'est un nouvel employé, définir un mot de passe par défaut
+                if (!_isEditMode)
                 {
-                    MessageBox.Show("Ce nom d'utilisateur est déjà utilisé.");
-                    return;
+                    Employee.Password = "password123";
                 }
 
                 this.DialogResult = true;
                 this.Close();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Erreur lors de la sauvegarde : {ex.Message}");
-            }
         }
 
-        private bool ValidateForm()
+        private bool ValidateFields()
         {
-            // Validation des champs obligatoires
-            if (string.IsNullOrWhiteSpace(TxtLastName.Text))
-            {
-                MessageBox.Show("Le nom est obligatoire.");
-                TxtLastName.Focus();
-                return false;
-            }
-
             if (string.IsNullOrWhiteSpace(TxtFirstName.Text))
             {
                 MessageBox.Show("Le prénom est obligatoire.");
@@ -141,25 +105,17 @@ namespace CompanyDirectory.Views
                 return false;
             }
 
-            if (string.IsNullOrWhiteSpace(TxtEmail.Text))
+            if (string.IsNullOrWhiteSpace(TxtLastName.Text))
             {
-                MessageBox.Show("L'email est obligatoire.");
-                TxtEmail.Focus();
+                MessageBox.Show("Le nom est obligatoire.");
+                TxtLastName.Focus();
                 return false;
             }
 
-            // Validation basique de l'email
-            if (!TxtEmail.Text.Contains("@") || !TxtEmail.Text.Contains("."))
+            if (string.IsNullOrWhiteSpace(TxtEmail.Text) || !TxtEmail.Text.Contains("@"))
             {
-                MessageBox.Show("L'email n'est pas valide.");
+                MessageBox.Show("L'email doit être valide.");
                 TxtEmail.Focus();
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(TxtPhone.Text))
-            {
-                MessageBox.Show("Le téléphone est obligatoire.");
-                TxtPhone.Focus();
                 return false;
             }
 
@@ -173,15 +129,34 @@ namespace CompanyDirectory.Views
             if (CmbSite.SelectedValue == null)
             {
                 MessageBox.Show("Veuillez sélectionner un site.");
-                CmbSite.Focus();
                 return false;
             }
 
             if (CmbService.SelectedValue == null)
             {
                 MessageBox.Show("Veuillez sélectionner un service.");
-                CmbService.Focus();
                 return false;
+            }
+
+            // Vérifier l'unicité du nom d'utilisateur
+            if (!_isEditMode || TxtUsername.Text.Trim() != Employee.Username)
+            {
+                try
+                {
+                    using var db = new ApplicationDbContext(((App)Application.Current).DbOptions);
+                    bool usernameExists = db.Employees.Any(e => e.Username == TxtUsername.Text.Trim() && e.Id != Employee.Id);
+                    if (usernameExists)
+                    {
+                        MessageBox.Show("Ce nom d'utilisateur existe déjà.");
+                        TxtUsername.Focus();
+                        return false;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Erreur lors de la validation : {ex.Message}");
+                    return false;
+                }
             }
 
             return true;

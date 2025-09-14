@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using CompanyDirectory.Data;
 using CompanyDirectory.Models;
 using CompanyDirectory.Services;
@@ -59,6 +60,9 @@ namespace CompanyDirectory.Views
                 EmployeesGrid.ItemsSource = employees;
                 EmployeesCountText.Text = $"{employees.Count} employé(s)";
                 EmployeesStatusText.Text = "Employés chargés";
+                
+                // Mettre à jour le compteur de sélection
+                UpdateSelectionCount();
             }
             catch (Exception ex)
             {
@@ -103,6 +107,129 @@ namespace CompanyDirectory.Views
             }
         }
         
+        #endregion
+
+        #region Gestion de la sélection multiple
+
+        private void EmployeesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UpdateSelectionCount();
+        }
+
+        private void UpdateSelectionCount()
+        {
+            int selectedCount = EmployeesGrid.SelectedItems.Count;
+            TxtSelectionCount.Text = $"{selectedCount} sélectionné(s)";
+            
+            // Activer/désactiver les boutons de modification multiple
+            BtnBulkEdit.IsEnabled = selectedCount > 0;
+        }
+
+        private void BtnSelectAll_Click(object sender, RoutedEventArgs e)
+        {
+            EmployeesGrid.SelectAll();
+        }
+
+        private void BtnDeselectAll_Click(object sender, RoutedEventArgs e)
+        {
+            EmployeesGrid.UnselectAll();
+        }
+
+        private void BtnBulkEdit_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedEmployees = GetSelectedEmployees();
+            if (selectedEmployees.Count == 0)
+            {
+                MessageBox.Show("Veuillez sélectionner au moins un employé.");
+                return;
+            }
+
+            var bulkEditDialog = new BulkEditDialog(selectedEmployees);
+            bulkEditDialog.Owner = this;
+            
+            if (bulkEditDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    ApplyBulkChanges(selectedEmployees, bulkEditDialog.Changes);
+                    LoadEmployees(); // Recharger la grille
+                    MessageBox.Show($"Modifications appliquées avec succès à {selectedEmployees.Count} employé(s) !");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Erreur lors de l'application des modifications : {ex.Message}");
+                    LogError($"Erreur modification multiple: {ex.Message}");
+                }
+            }
+        }
+
+        private List<Employee> GetSelectedEmployees()
+        {
+            return EmployeesGrid.SelectedItems.Cast<Employee>().ToList();
+        }
+
+        private void ApplyBulkChanges(List<Employee> employees, BulkEditChanges changes)
+        {
+            using var db = new ApplicationDbContext(((App)Application.Current).DbOptions);
+            
+            int modifiedCount = 0;
+            var modifications = new List<string>();
+
+            foreach (var employee in employees)
+            {
+                var dbEmployee = db.Employees.Find(employee.Id);
+                if (dbEmployee != null)
+                {
+                    bool employeeModified = false;
+
+                    // Modification du site
+                    if (changes.UpdateSite && changes.NewSiteId.HasValue)
+                    {
+                        var oldSiteId = dbEmployee.SiteId;
+                        dbEmployee.SiteId = changes.NewSiteId.Value;
+                        employeeModified = true;
+                    }
+                        
+                    // Modification du service
+                    if (changes.UpdateService && changes.NewServiceId.HasValue)
+                    {
+                        var oldServiceId = dbEmployee.ServiceId;
+                        dbEmployee.ServiceId = changes.NewServiceId.Value;
+                        employeeModified = true;
+                    }
+
+                    // Modification du domaine email
+                    if (changes.UpdateEmailDomain && !string.IsNullOrWhiteSpace(changes.NewEmailDomain))
+                    {
+                        var emailParts = dbEmployee.Email.Split('@');
+                        if (emailParts.Length == 2)
+                        {
+                            var newDomain = changes.NewEmailDomain.StartsWith("@") ? 
+                                changes.NewEmailDomain.Substring(1) : changes.NewEmailDomain;
+                            dbEmployee.Email = $"{emailParts[0]}@{newDomain}";
+                            employeeModified = true;
+                        }
+                    }
+
+                    if (employeeModified)
+                    {
+                        modifiedCount++;
+                        modifications.Add($"{dbEmployee.FirstName} {dbEmployee.LastName}");
+                    }
+                }
+            }
+            
+            db.SaveChanges();
+            
+            // Log des modifications
+            var logMessage = $"Modification en lot appliquée à {modifiedCount} employé(s)";
+            if (changes.UpdateSite) logMessage += $" - Nouveau site ID: {changes.NewSiteId}";
+            if (changes.UpdateService) logMessage += $" - Nouveau service ID: {changes.NewServiceId}";
+            if (changes.UpdateEmailDomain) logMessage += $" - Nouveau domaine: {changes.NewEmailDomain}";
+            
+            LogAdminAccess(logMessage);
+        }
+
         #endregion
 
         #region Gestion des Employés
@@ -160,39 +287,46 @@ namespace CompanyDirectory.Views
 
         private void BtnDeleteEmployee_Click(object sender, RoutedEventArgs e)
         {
-            if (EmployeesGrid.SelectedItem is Employee selectedEmployee)
+            var selectedEmployees = GetSelectedEmployees();
+            
+            if (selectedEmployees.Count == 0)
             {
-                var result = MessageBox.Show(
-                    $"Êtes-vous sûr de vouloir supprimer {selectedEmployee.FirstName} {selectedEmployee.LastName} ?",
-                    "Confirmation de suppression",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Warning);
+                MessageBox.Show("Veuillez sélectionner au moins un employé à supprimer.");
+                return;
+            }
 
-                if (result == MessageBoxResult.Yes)
+            string message = selectedEmployees.Count == 1 ?
+                $"Êtes-vous sûr de vouloir supprimer {selectedEmployees[0].FirstName} {selectedEmployees[0].LastName} ?" :
+                $"Êtes-vous sûr de vouloir supprimer les {selectedEmployees.Count} employés sélectionnés ?";
+
+            var result = MessageBox.Show(message, "Confirmation de suppression",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                try
                 {
-                    try
+                    using var db = new ApplicationDbContext(((App)Application.Current).DbOptions);
+                    
+                    foreach (var selectedEmployee in selectedEmployees)
                     {
-                        using var db = new ApplicationDbContext(((App)Application.Current).DbOptions);
                         var employee = db.Employees.Find(selectedEmployee.Id);
                         if (employee != null)
                         {
                             db.Employees.Remove(employee);
-                            db.SaveChanges();
-                            
                             LogAdminAccess($"Employé supprimé: {selectedEmployee.FirstName} {selectedEmployee.LastName}");
-                            LoadEmployees();
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Erreur lors de la suppression : {ex.Message}");
-                        LogError($"Erreur suppression employé: {ex.Message}");
-                    }
+                    
+                    db.SaveChanges();
+                    LoadEmployees();
+                    MessageBox.Show($"{selectedEmployees.Count} employé(s) supprimé(s) avec succès.");
                 }
-            }
-            else
-            {
-                MessageBox.Show("Veuillez sélectionner un employé à supprimer.");
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Erreur lors de la suppression : {ex.Message}");
+                    LogError($"Erreur suppression employé: {ex.Message}");
+                }
             }
         }
 
@@ -225,7 +359,7 @@ namespace CompanyDirectory.Views
             finally
             {
                 BtnImportUsers.IsEnabled = true;
-                BtnImportUsers.Content = "📥 Importer via API";
+                BtnImportUsers.Content = "Importer via API";
             }
         }
 
