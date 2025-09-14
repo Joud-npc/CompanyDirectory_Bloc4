@@ -20,9 +20,8 @@ namespace CompanyDirectory.Services
                     {
                         col.Item().Text($"Email: {e.Email}");
                         col.Item().Text($"Téléphone: {e.Phone}");
-                        col.Item().Text($"Mobile: {e.MobilePhone}");
-                        col.Item().Text($"Site: {e.Site?.City ?? "N/A"}");
-                        col.Item().Text($"Service: {e.Service?.Name ?? "N/A"}");
+                        col.Item().Text($"Site: {e.Site?.Ville ?? "N/A"}");
+                        col.Item().Text($"Service: {e.Service?.Nom ?? "N/A"}");
                     });
                 });
             }).GeneratePdf(outputPath);
