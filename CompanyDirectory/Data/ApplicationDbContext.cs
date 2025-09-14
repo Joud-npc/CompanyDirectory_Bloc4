@@ -5,8 +5,7 @@ namespace CompanyDirectory.Data
 {
     public class ApplicationDbContext : DbContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options) {}
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
         public DbSet<Employee> Employees => Set<Employee>();
         public DbSet<Site> Sites => Set<Site>();
@@ -28,9 +27,7 @@ namespace CompanyDirectory.Data
                 .HasForeignKey(e => e.ServiceId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Employee>()
-                .HasIndex(e => e.Email)
-                .IsUnique(false);
+            modelBuilder.Entity<Employee>().HasIndex(e => e.Email);
         }
     }
 }

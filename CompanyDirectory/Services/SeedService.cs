@@ -14,14 +14,12 @@ namespace CompanyDirectory.Services
 
         public async Task SeedRandomUsersAsync(int count = 1000)
         {
-            // Ensure some base services if none
-            if(!_db.Services.Any())
+            if (!_db.Services.Any())
             {
                 var defaultServices = new[] { "Production", "Comptabilité", "Accueil", "Maintenance", "R&D" };
-                foreach(var s in defaultServices) _db.Services.Add(new Service { Name = s });
+                foreach (var s in defaultServices) _db.Services.Add(new Service { Name = s });
+                await _db.SaveChangesAsync();
             }
-
-            await _db.SaveChangesAsync();
 
             var url = $"https://randomuser.me/api/?results={count}&nat=fr";
             var json = await _http.GetStringAsync(url);
@@ -32,7 +30,7 @@ namespace CompanyDirectory.Services
             var rand = new Random();
             var services = _db.Services.ToList();
 
-            foreach(var r in results)
+            foreach (var r in results)
             {
                 var city = (string?)r["location"]?["city"] ?? "Unknown";
                 var site = _db.Sites.FirstOrDefault(s => s.City == city);

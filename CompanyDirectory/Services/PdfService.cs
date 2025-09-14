@@ -13,13 +13,14 @@ namespace CompanyDirectory.Services
             {
                 container.Page(page =>
                 {
-                    page.Margin(30);
+                    page.Margin(25);
                     page.Size(PageSizes.A4);
+                    page.Header().Text($"{e.FirstName} {e.LastName}").FontSize(18).Bold();
                     page.Content().Column(col =>
                     {
-                        col.Item().Text($"{e.FirstName} {e.LastName}").FontSize(20).Bold();
                         col.Item().Text($"Email: {e.Email}");
-                        col.Item().Text($"Téléphone: {e.Phone} / {e.MobilePhone}");
+                        col.Item().Text($"Téléphone: {e.Phone}");
+                        col.Item().Text($"Mobile: {e.MobilePhone}");
                         col.Item().Text($"Site: {e.Site?.City ?? "N/A"}");
                         col.Item().Text($"Service: {e.Service?.Name ?? "N/A"}");
                     });

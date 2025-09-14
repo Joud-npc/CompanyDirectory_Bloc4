@@ -9,8 +9,8 @@ namespace CompanyDirectory.Models
         public string Phone { get; set; } = "";
         public string MobilePhone { get; set; } = "";
         public int SiteId { get; set; }
-        public Site Site { get; set; } = null!;
+        public Site? Site { get; set; }
         public int ServiceId { get; set; }
-        public Service Service { get; set; } = null!;
+        public Service? Service { get; set; }
     }
 }

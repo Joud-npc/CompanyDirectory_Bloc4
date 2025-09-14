@@ -1,61 +1,71 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CompanyDirectory.Models;
-using CompanyDirectory.Services;
 using System.Collections.ObjectModel;
+using System.Linq;
+using System.Windows;
 
 namespace CompanyDirectory.ViewModels
 {
     public partial class AdminViewModel : ObservableObject
     {
-        private readonly IEmployeeService _employeeService;
-        public ObservableCollection<Employee> Employees { get; set; } = new();
-        public ObservableCollection<Site> Sites { get; set; } = new();
-        public ObservableCollection<Service> Services { get; set; } = new();
+        [ObservableProperty]
+        private string searchText = string.Empty;
 
-        [ObservableProperty] private Employee? selectedEmployee;
+        [ObservableProperty]
+        private EmployeeViewModel selectedEmployee;
 
-        public IRelayCommand LoadCommand { get; }
+        public ObservableCollection<EmployeeViewModel> Employees { get; set; }
+
+        public IRelayCommand SearchCommand { get; }
         public IRelayCommand AddCommand { get; }
         public IRelayCommand EditCommand { get; }
         public IRelayCommand DeleteCommand { get; }
 
-        public AdminViewModel(IEmployeeService employeeService)
+        public AdminViewModel()
         {
-            _employeeService = employeeService;
-            LoadCommand = new RelayCommand(async () => await LoadAsync());
-            AddCommand = new RelayCommand(async () => await AddAsync());
-            EditCommand = new RelayCommand(async () => await EditAsync(), () => SelectedEmployee != null);
-            DeleteCommand = new RelayCommand(async () => await DeleteAsync(), () => SelectedEmployee != null);
+            Employees = new ObservableCollection<EmployeeViewModel>
+            {
+                new EmployeeViewModel { FirstName="Jean", LastName="Dupont", Email="jean.dupont@mail.com", Phone="0601020304", Site="Paris", Service="Comptabilité"},
+                new EmployeeViewModel { FirstName="Marie", LastName="Martin", Email="marie.martin@mail.com", Phone="0605060708", Site="Lyon", Service="Production"}
+            };
+
+            SearchCommand = new RelayCommand(OnSearch);
+            AddCommand = new RelayCommand(OnAdd);
+            EditCommand = new RelayCommand(OnEdit);
+            DeleteCommand = new RelayCommand(OnDelete);
         }
 
-        public async Task LoadAsync()
+        private void OnSearch()
         {
-            Employees = new ObservableCollection<Employee>(await _employeeService.GetAllAsync());
-            Sites = new ObservableCollection<Site>(await _employeeService.GetSitesAsync());
-            Services = new ObservableCollection<Service>(await _employeeService.GetServicesAsync());
-            OnPropertyChanged(nameof(Employees));
+            if (string.IsNullOrWhiteSpace(SearchText)) return;
+
+            var results = Employees.Where(e =>
+                e.FirstName.Contains(SearchText, System.StringComparison.OrdinalIgnoreCase) ||
+                e.LastName.Contains(SearchText, System.StringComparison.OrdinalIgnoreCase) ||
+                e.Email.Contains(SearchText, System.StringComparison.OrdinalIgnoreCase) ||
+                e.Site.Contains(SearchText, System.StringComparison.OrdinalIgnoreCase) ||
+                e.Service.Contains(SearchText, System.StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            Employees.Clear();
+            foreach (var r in results) Employees.Add(r);
         }
 
-        private async Task AddAsync()
+        private void OnAdd()
         {
-            var e = new Employee { FirstName = "Nouveau", LastName = "Employe", Email = "nouveau@example.com" };
-            await _employeeService.AddAsync(e);
-            await LoadAsync();
+            MessageBox.Show("Ajouter employé (à implémenter)");
         }
 
-        private async Task EditAsync()
+        private void OnEdit()
         {
             if (SelectedEmployee == null) return;
-            await _employeeService.UpdateAsync(SelectedEmployee);
-            await LoadAsync();
+            MessageBox.Show($"Modifier {SelectedEmployee.FirstName} {SelectedEmployee.LastName} (à implémenter)");
         }
 
-        private async Task DeleteAsync()
+        private void OnDelete()
         {
             if (SelectedEmployee == null) return;
-            await _employeeService.DeleteAsync(SelectedEmployee.Id);
-            await LoadAsync();
+            Employees.Remove(SelectedEmployee);
         }
     }
 }

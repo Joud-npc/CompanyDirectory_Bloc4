@@ -1,19 +1,33 @@
 <Window x:Class="CompanyDirectory.Views.LoginView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:CompanyDirectory.ViewModels"
-        Title="Connexion" Height="300" Width="400" WindowStartupLocation="CenterScreen">
+        xmlns:converters="clr-namespace:CompanyDirectory.Converters"
+        Title="Connexion" Height="250" Width="400"
+        WindowStartupLocation="CenterScreen">
+
     <Window.DataContext>
         <vm:LoginViewModel />
     </Window.DataContext>
-    <Grid Margin="20">
-        <StackPanel VerticalAlignment="Center">
-            <TextBlock Text="Identifiant" />
-            <TextBox x:Name="UsernameBox" Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" />
-            <TextBlock Text="Mot de passe (démo: user)" Margin="0,10,0,0" />
-            <PasswordBox x:Name="PasswordBox" />
-            <Button Content="Se connecter" Margin="0,10,0,0" Padding="6"
-                    Click="Connect_Click" />
-            <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" />
-        </StackPanel>
-    </Grid>
+
+    <StackPanel Margin="20" VerticalAlignment="Center" HorizontalAlignment="Center">
+
+        <!-- Identifiant -->
+        <Grid Margin="0,5">
+            <TextBox x:Name="UsernameTextBox" Width="250" Height="30" Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBlock Text="Identifiant" IsHitTestVisible="False" Foreground="Gray" Margin="5,0,0,0" VerticalAlignment="Center"
+                       Visibility="{Binding Text, ElementName=UsernameTextBox, Converter={StaticResource StringToVisibilityConverter}}" />
+        </Grid>
+
+        <!-- Mot de passe -->
+        <Grid Margin="0,5">
+            <PasswordBox x:Name="PasswordBox" Width="250" Height="30"/>
+            <TextBlock Text="Mot de passe" IsHitTestVisible="False" Foreground="Gray" Margin="5,0,0,0" VerticalAlignment="Center"
+                       Visibility="{Binding Password, ElementName=PasswordBox, Converter={StaticResource StringToVisibilityConverter}}" />
+        </Grid>
+
+        <!-- Bouton -->
+        <Button Width="250" Height="30" Margin="0,10,0,0" Content="Se connecter"
+                Command="{Binding LoginCommand}" CommandParameter="{Binding ElementName=PasswordBox}" />
+    </StackPanel>
 </Window>

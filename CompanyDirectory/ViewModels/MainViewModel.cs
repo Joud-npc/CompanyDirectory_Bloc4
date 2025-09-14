@@ -1,51 +1,57 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CompanyDirectory.Models;
-using CompanyDirectory.Services;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace CompanyDirectory.ViewModels
 {
     public partial class MainViewModel : ObservableObject
     {
-        private readonly IEmployeeService _employeeService;
-        private readonly IServiceProvider _sp;
+        [ObservableProperty]
+        private string searchText = string.Empty;
 
-        [ObservableProperty] private ObservableCollection<Employee> employees = new();
-        [ObservableProperty] private ObservableCollection<Site> sites = new();
-        [ObservableProperty] private ObservableCollection<Service> services = new();
-        [ObservableProperty] private string searchText = "";
-        [ObservableProperty] private Site? selectedSite;
-        [ObservableProperty] private Service? selectedService;
+        public ObservableCollection<EmployeeViewModel> Employees { get; set; }
 
-        public IRelayCommand RefreshCommand { get; }
+        public IRelayCommand SearchCommand { get; }
 
-        public MainViewModel(IEmployeeService employeeService, IServiceProvider sp)
+        public MainViewModel()
         {
-            _employeeService = employeeService;
-            _sp = sp;
-            RefreshCommand = new RelayCommand(async () => await LoadAsync());
-        }
-
-        public async Task LoadAsync()
-        {
-            var list = await _employeeService.GetAllAsync();
-            Employees = new ObservableCollection<Employee>(list);
-            Sites = new ObservableCollection<Site>(await _employeeService.GetSitesAsync());
-            Services = new ObservableCollection<Service>(await _employeeService.GetServicesAsync());
-        }
-
-        public IEnumerable<Employee> FilteredEmployees()
-        {
-            var q = Employees.AsEnumerable();
-            if (!string.IsNullOrWhiteSpace(SearchText))
+            // 🔹 Exemple de données provisoires (plus tard ce sera EF + PostgreSQL)
+            Employees = new ObservableCollection<EmployeeViewModel>
             {
-                var s = SearchText.ToLower();
-                q = q.Where(e => (e.FirstName + " " + e.LastName).ToLower().Contains(s) || (e.Email ?? "").ToLower().Contains(s));
-            }
-            if (SelectedSite != null) q = q.Where(e => e.SiteId == SelectedSite.Id);
-            if (SelectedService != null) q = q.Where(e => e.ServiceId == SelectedService.Id);
-            return q;
+                new EmployeeViewModel { FirstName="Jean", LastName="Dupont", Email="jean.dupont@mail.com", Phone="0601020304", Site="Paris", Service="Comptabilité"},
+                new EmployeeViewModel { FirstName="Marie", LastName="Martin", Email="marie.martin@mail.com", Phone="0605060708", Site="Lyon", Service="Production"}
+            };
+
+            SearchCommand = new RelayCommand(OnSearch);
         }
+
+        private void OnSearch()
+        {
+            if (string.IsNullOrWhiteSpace(SearchText))
+                return;
+
+            var results = Employees.Where(e =>
+                e.FirstName.Contains(SearchText, System.StringComparison.OrdinalIgnoreCase) ||
+                e.LastName.Contains(SearchText, System.StringComparison.OrdinalIgnoreCase) ||
+                e.Email.Contains(SearchText, System.StringComparison.OrdinalIgnoreCase) ||
+                e.Site.Contains(SearchText, System.StringComparison.OrdinalIgnoreCase) ||
+                e.Service.Contains(SearchText, System.StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            Employees.Clear();
+            foreach (var r in results)
+                Employees.Add(r);
+        }
+    }
+
+    public class EmployeeViewModel : ObservableObject
+    {
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Site { get; set; } = string.Empty;
+        public string Service { get; set; } = string.Empty;
     }
 }

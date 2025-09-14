@@ -1,20 +1,17 @@
 using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography;
-using System.Text;
 
 namespace CompanyDirectory.Services
 {
     public class AuthService : IAuthService
     {
         private readonly IConfiguration _config;
-        // For demo: one fixed user / simple check. Expand as needed (Users table).
         public AuthService(IConfiguration config) { _config = config; }
 
         public Task<bool> AuthenticateAsync(string username, string password)
         {
-            // Demo: accept any username/password "user" for visitor
+            // Demo: visitor login requires password "user"
             if (!string.IsNullOrWhiteSpace(username) && password == "user") return Task.FromResult(true);
-            // otherwise you can implement checking a Users table
             return Task.FromResult(false);
         }
 
@@ -25,7 +22,7 @@ namespace CompanyDirectory.Services
             return Task.FromResult(VerifyHash(password, stored));
         }
 
-        // PBKDF2 helpers
+        // PBKDF2 helpers (same as generator)
         public static string HashPassword(string password)
         {
             byte[] salt = new byte[16];

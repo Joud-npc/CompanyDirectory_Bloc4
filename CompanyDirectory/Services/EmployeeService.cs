@@ -13,8 +13,7 @@ namespace CompanyDirectory.Services
             await _db.Employees.Include(e => e.Site).Include(e => e.Service).ToListAsync();
 
         public async Task<Employee?> GetByIdAsync(int id) =>
-            await _db.Employees.Include(e => e.Site).Include(e => e.Service)
-                .FirstOrDefaultAsync(e => e.Id == id);
+            await _db.Employees.Include(e => e.Site).Include(e => e.Service).FirstOrDefaultAsync(e => e.Id == id);
 
         public async Task AddAsync(Employee e)
         {
@@ -34,10 +33,7 @@ namespace CompanyDirectory.Services
             if (e != null) { _db.Employees.Remove(e); await _db.SaveChangesAsync(); }
         }
 
-        public async Task<List<Site>> GetSitesAsync() =>
-            await _db.Sites.ToListAsync();
-
-        public async Task<List<Service>> GetServicesAsync() =>
-            await _db.Services.ToListAsync();
+        public async Task<List<Site>> GetSitesAsync() => await _db.Sites.ToListAsync();
+        public async Task<List<Service>> GetServicesAsync() => await _db.Services.ToListAsync();
     }
 }
