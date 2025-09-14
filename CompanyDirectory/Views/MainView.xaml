@@ -1,0 +1,31 @@
+<Window x:Class="CompanyDirectory.Views.MainView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:vm="clr-namespace:CompanyDirectory.ViewModels"
+        Title="Annuaire - Lecteur" Height="600" Width="1000" WindowStartupLocation="CenterScreen"
+        PreviewKeyDown="Window_PreviewKeyDown">
+    <Window.DataContext>
+        <vm:MainViewModel />
+    </Window.DataContext>
+    <Grid>
+        <DockPanel>
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="8">
+                <TextBox Width="300" Margin="0,0,8,0" PlaceholderText="Recherche..." Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+                <ComboBox Width="150" ItemsSource="{Binding Sites}" SelectedItem="{Binding SelectedSite}" DisplayMemberPath="City" />
+                <ComboBox Width="150" ItemsSource="{Binding Services}" SelectedItem="{Binding SelectedService}" DisplayMemberPath="Name" Margin="8,0,0,0" />
+                <Button Content="Actualiser" Command="{Binding RefreshCommand}" Margin="8,0,0,0" />
+            </StackPanel>
+
+            <DataGrid ItemsSource="{Binding Employees}" AutoGenerateColumns="False" IsReadOnly="True" Margin="8" Name="EmployeesGrid">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Nom" Binding="{Binding LastName}" />
+                    <DataGridTextColumn Header="Prénom" Binding="{Binding FirstName}" />
+                    <DataGridTextColumn Header="Email" Binding="{Binding Email}" />
+                    <DataGridTextColumn Header="Téléphone" Binding="{Binding Phone}" />
+                    <DataGridTextColumn Header="Mobile" Binding="{Binding MobilePhone}" />
+                    <DataGridTextColumn Header="Site" Binding="{Binding Site.City}" />
+                    <DataGridTextColumn Header="Service" Binding="{Binding Service.Name}" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </DockPanel>
+    </Grid>
+</Window>
