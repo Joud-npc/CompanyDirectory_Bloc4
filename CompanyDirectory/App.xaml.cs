@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using CompanyDirectory.Data;
 using CompanyDirectory.Models;
+using CompanyDirectory.Views;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
@@ -14,38 +15,44 @@ namespace CompanyDirectory
 {
     public partial class App : Application
     {
-        protected override void OnStartup(StartupEventArgs e)
+        protected override async void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
 
-            // --- Charger configuration (vérifie que appsettings.json est présent et copié dans output) ---
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(AppContext.BaseDirectory)
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-            var configuration = builder.Build();
-
-            // --- Configurer DbContext (ApplicationDbContext attendu) ---
-            var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-            optionsBuilder.UseNpgsql(configuration.GetConnectionString("DefaultConnection"));
-
-            // Crée la base / tables si nécessaires et seed (synchronement ici, avant affichage UI)
-            using (var context = new ApplicationDbContext(optionsBuilder.Options))
+            try
             {
+                // --- CONFIGURATION ---
+                var builder = new ConfigurationBuilder()
+                    .SetBasePath(AppContext.BaseDirectory)
+                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                var configuration = builder.Build();
+
+                var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+                optionsBuilder.UseNpgsql(configuration.GetConnectionString("DefaultConnection"));
+
+                using var context = new ApplicationDbContext(optionsBuilder.Options);
                 context.Database.EnsureCreated();
 
-                if (!context.Sites.Any())
+                // Seed uniquement si la DB est vide
+                if (!context.Employees.Any())
                 {
-                    // Exécute le seed de façon synchrone ici (on est en startup)
-                    SeedDatabaseAsync(context).GetAwaiter().GetResult();
+                    await SeedDatabaseAsync(context);
+                    MessageBox.Show("Base de données initialisée avec 1000 employés");
                 }
             }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erreur au démarrage : {ex.Message}\n\n{ex.InnerException?.Message}", 
+                    "Erreur", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Error);
+            }
 
-            // --- Ouvrir la fenêtre de login (obligatoire sinon rien ne s'affiche) ---
-            // Vérifie que tu as bien une fenêtre LoginWindow sous CompanyDirectory.Views
-            var login = new CompanyDirectory.Views.LoginWindow();
-            this.MainWindow = login;
+            // 🔹 Ouvre ta fenêtre de login
+            var login = new LoginWindow();
             login.Show();
         }
+
 
         private async Task SeedDatabaseAsync(ApplicationDbContext context)
         {
@@ -75,12 +82,14 @@ namespace CompanyDirectory
 
             // Appel API RandomUser pour 1000 employés (en paquets)
             using var http = new HttpClient();
-            int batchSize = 100;
             var rand = new Random();
 
-            for (int i = 0; i < 1000; i += batchSize)
+            int target = 1000;
+            int created = 0;
+
+            while (created < target)
             {
-                int fetch = Math.Min(batchSize, 1000 - i);
+                int fetch = Math.Min(100, target - created);
                 var response = await http.GetStringAsync($"https://randomuser.me/api/?results={fetch}&nat=fr");
                 var json = JObject.Parse(response);
                 var results = json["results"] as JArray;
@@ -92,7 +101,10 @@ namespace CompanyDirectory
                     var last = (string?)r["name"]?["last"] ?? "X";
                     var email = (string?)r["email"] ?? $"{first}.{last}@example.com";
                     var phone = (string?)r["phone"] ?? "";
-                    var cell = (string?)r["cell"] ?? "";
+
+                    // Identifiant et mot de passe
+                    var username = $"{last}.{first}".ToLower();
+                    var password = "azerty123"; // ⚠️ À sécuriser plus tard
 
                     var site = sites[rand.Next(sites.Count)];
                     var service = services[rand.Next(services.Count)];
@@ -104,10 +116,13 @@ namespace CompanyDirectory
                         Email = email,
                         Phone = phone,
                         SiteId = site.Id,
-                        ServiceId = service.Id
+                        ServiceId = service.Id,
+                        Username = username,
+                        Password = password
                     };
 
                     context.Employees.Add(employee);
+                    created++;
                 }
 
                 await context.SaveChangesAsync();

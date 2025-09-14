@@ -69,7 +69,6 @@ namespace CompanyDirectory.Services
                 var last = (string?)r["name"]?["last"] ?? "X";
                 var email = (string?)r["email"] ?? $"{first}.{last}@example.com";
                 var phone = (string?)r["phone"] ?? "";
-                var cell = (string?)r["cell"] ?? "";
 
                 var service = services[rand.Next(services.Count)];
 
