@@ -17,11 +17,10 @@ namespace CompanyDirectory
         private List<Site> _allSites;
         private List<Service> _allServices;
         
-        // Gestion du code secret : ↑↓↑↓→←→←
+        // Gestion du code secret : Espace, Entrée, Entrée, Espace
         private readonly List<Key> _keySequence = new();
         private readonly Key[] _secretKeys = { 
-            Key.Up, Key.Down, Key.Up, Key.Down, 
-            Key.Right, Key.Left, Key.Right, Key.Left 
+            Key.Space, Key.Enter, Key.Enter, Key.Space 
         };
 
         public MainWindow(Employee user)
@@ -177,14 +176,14 @@ namespace CompanyDirectory
         {
             _keySequence.Add(e.Key);
 
-            // Garder seulement les 8 dernières touches
-            if (_keySequence.Count > 8)
+            // Garder seulement les 4 dernières touches (au lieu de 8)
+            if (_keySequence.Count > 4)
             {
                 _keySequence.RemoveAt(0);
             }
 
             // Vérifier si la séquence correspond
-            if (_keySequence.Count == 8 && _keySequence.SequenceEqual(_secretKeys))
+            if (_keySequence.Count == 4 && _keySequence.SequenceEqual(_secretKeys))
             {
                 _keySequence.Clear();
                 OpenAdminMode();

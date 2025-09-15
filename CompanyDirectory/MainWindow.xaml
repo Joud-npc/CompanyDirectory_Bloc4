@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Annuaire - Entreprise Agroalimentaire" Height="600" Width="1000"
         WindowStartupLocation="CenterScreen"
-        KeyDown="Window_KeyDown">
+        KeyDown="Window_KeyDown"
+        PreviewKeyDown="Window_KeyDown">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -21,7 +22,7 @@
                     <TextBlock Text="Nom/Prénom :" Margin="0,0,0,5"/>
                     <TextBox x:Name="TxtSearch" Width="200" Height="25" 
                              TextChanged="TxtSearch_TextChanged"
-                             ToolTip="Saisie partielle autorisée"/>
+                             ToolTip="Code secret: ↑↓↑↓→←→← (utilisez les flèches du clavier)"/>
                 </StackPanel>
 
                 <!-- Filtre par site -->
@@ -82,7 +83,7 @@
         <!-- Barre de statut -->
         <StatusBar Grid.Row="2" Height="25">
             <StatusBarItem>
-                <TextBlock x:Name="StatusText" Text="Prêt"/>
+                <TextBlock x:Name="StatusText" Text="Prêt - Tapez ↑↓↑↓→←→← pour l'admin"/>
             </StatusBarItem>
             <Separator/>
             <StatusBarItem>

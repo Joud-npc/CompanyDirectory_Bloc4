@@ -4,6 +4,7 @@ using System.Windows;
 using CompanyDirectory.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using QuestPDF.Infrastructure;
 
 namespace CompanyDirectory
 {
@@ -17,6 +18,7 @@ namespace CompanyDirectory
             base.OnStartup(e);
 
             // --- CONFIGURATION ---
+            QuestPDF.Settings.License = LicenseType.Community;
             var builder = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
